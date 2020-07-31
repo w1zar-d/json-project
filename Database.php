@@ -33,4 +33,12 @@ class Database  {
         echo $this->mysqli->error;
         return $this->mysqli->insert_id;
     }
+
+    /**
+     * @param $string
+     * @return string
+     */
+    public function getEscapedString($string) {
+        return $this->mysqli->real_escape_string($string);
+    }
 }

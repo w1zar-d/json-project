@@ -37,21 +37,23 @@ class Handler {
     }
 
     public function getReviews() {
-        // todo экранировать
         $order = $_GET['order']; // Возможные типы: rating, create
         $asc = $_GET['asc']; // Принимает логические значнения. Если true, то по возрастанию. Иначе - по убыванию
-        $last_id = $_GET['last_id']; // Последний полученный ID отзыва (для пагинации)
+        $last_id = (int) $_GET['last_id']; // Последний полученный ID отзыва (для пагинации)
 
         $query = 'select id, username, rating, photo_1 from reviews where id > '
-            . ((isset($last_id) ? $last_id : 0)) // Если в запросе пришёл айдишник, то получаем отзывы начиная с последнего. Если не пришёл, то начинаем с первого
+            . ((isset($last_id) && is_int($last_id) ? $last_id : 0)) // Если в запросе пришёл айдишник, то получаем отзывы начиная с последнего. Если не пришёл, то начинаем с первого
             . ' ';
 
         if (isset($order)) {
+            $order = $this->db->getEscapedString($order);
+
             if ($order == 'rating' or $order == 'create') { // сортировть по рейтингу или созданию
                 $query .= 'order by ' . (($order == 'rating') ? 'rating' : 'created_at');
             }
 
             if (isset($asc)) {
+                $asc = $this->db->getEscapedString($asc);
                 $query .= ' ' . (($asc == 'true') ? 'ASC' : 'DESC'); // Если true, то по возрастанию. Иначе - по убыванию
             }
         }
@@ -69,15 +71,16 @@ class Handler {
     }
 
     public function getReview() : string {
-        $id = $_GET['id']; // ID отзыва, который нужно получить
+        $id = (int) $_GET['id']; // ID отзыва, который нужно получить
         $fields = $_GET['fields']; // Строка с перечислением полей, разделённых запятой (ex. rating,created_at,text)
 
-        if (empty($id))
+        if (empty($id) || !is_int($id))
             return 'ID cannot be null';
 
         $query = 'select username, rating, photo_1';
 
         if (isset($fields)) {
+            $fields = $this->db->getEscapedString($fields);
             $fields_list = explode(',', $fields);
 
             foreach ($fields_list as $field) {
@@ -97,12 +100,12 @@ class Handler {
     }
 
     public function createReview() : string {
-        $username = html_entity_decode($_GET['username']);
-        $photo_1 = html_entity_decode($_GET['photo_1']);
-        $photo_2 = html_entity_decode($_GET['photo_2']);
-        $photo_3 = html_entity_decode($_GET['photo_3']);
-        $rating = (int) $_GET['rating'];
-        $text = html_entity_decode($_GET['text']);
+        $username = html_entity_decode($this->db->getEscapedString($_GET['username']));
+        $photo_1 = html_entity_decode($this->db->getEscapedString($_GET['photo_1']));
+        $photo_2 = html_entity_decode($this->db->getEscapedString($_GET['photo_2']));
+        $photo_3 = html_entity_decode($this->db->getEscapedString($_GET['photo_3']));
+        $rating = (int) $this->db->getEscapedString($_GET['rating']);
+        $text = html_entity_decode($this->db->getEscapedString($_GET['text']));
 
         if (empty($username) || strlen($username) > 50)
             return json_encode(["status"    =>  "error", "code" =>  "Invalid username"]);
